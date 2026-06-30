@@ -96,12 +96,12 @@ const AuthController = {
           .json({ success: false, message: invalidCredsMsg });
       }
 
-      if (!user.is_active) {
-        return res.status(403).json({
-          success: false,
-          message: "Akun Anda dinonaktifkan. Hubungi Admin.",
-        });
-      }
+      // if (!user.is_active) {
+      //   return res.status(403).json({
+      //     success: false,
+      //     message: "Cabang yang ditaukan di akun anda dinonaktifkan. Hubungi Admin.",
+      //   });
+      // }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
@@ -120,11 +120,10 @@ const AuthController = {
         }
 
         req.session.user = {
-          id: user.id,
-          full_name: user.full_name,
+          id_user: user.id_user,
           email: user.email,
-          role: user.role,
-          branch_id: user.branch_id,
+          id_role: user.id_role,
+          id_cabang: user.id_cabang,
         };
 
         return res.status(200).json({

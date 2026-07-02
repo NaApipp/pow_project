@@ -1,31 +1,80 @@
-const VALID_ROLES = ['admin', 'kasir', 'staff_gudang'];
+import { z } from "zod";
+const VALID_ROLES = ["admin", "kasir", "staff_gudang"];
 
-function validateRegisterInput({  email, password, role }) {
-  const errors = [];
+const registerSchema = z.object({
+  // Email Validation
+  email: z
+    .string({
+      required_error: "Format email tidak valid.",
+      invalid_type_error: "Format email tidak valid.",
+    })
+    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Format email tidak valid.")
+    .endsWith("@gmail.com", "Email harus beralamat di @gmail.com"),
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email || !emailRegex.test(email)) {
-    errors.push('Format email tidak valid.');
+  // Password Validation
+  password: z
+    .string({
+      required_error: "Password minimal 8 karakter.",
+      invalid_type_error: "Password minimal 8 karakter.",
+    })
+    .superRefine((val, ctx) => {
+      if (val.length < 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Password minimal 8 karakter.",
+        });
+      } else if (!/[A-Z]/.test(val) || !/[0-9]/.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Password harus mengandung huruf kapital dan angka.",
+        });
+      }
+    }),
+
+  // Id Cabang Validation
+  id_cabang: z.string().min(1, "Id Cabang wajib diisi."),
+
+  // Id Role Validation
+  id_role: z
+    .string()
+    .refine((val) => VALID_ROLES.includes(val), {
+      message: "Role tidak valid.",
+    })
+    .optional(),
+});
+
+function validateRegisterInput(data) {
+  const result = registerSchema.safeParse(data);
+  if (!result.success) {
+    return result.error.issues.map((err) => err.message);
   }
-
-  if (!password || password.length < 8) {
-    errors.push('Password minimal 8 karakter.');
-  } else if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-    errors.push('Password harus mengandung huruf kapital dan angka.');
-  }
-
-  if (role && !VALID_ROLES.includes(role)) {
-    errors.push('Role tidak valid.');
-  }
-
-  return errors;
+  return [];
 }
 
-function validateLoginInput({ email, password }) {
-  const errors = [];
-  if (!email) errors.push('Email wajib diisi.');
-  if (!password) errors.push('Password wajib diisi.');
-  return errors;
+const loginSchema = z.object({
+  // Email Validation
+  email: z
+    .string({
+      required_error: "Email wajib diisi.",
+      invalid_type_error: "Email wajib diisi.",
+    })
+    .min(1, "Email wajib diisi."),
+
+  // Password Validation
+  password: z
+    .string({
+      required_error: "Password wajib diisi.",
+      invalid_type_error: "Password wajib diisi.",
+    })
+    .min(1, "Password wajib diisi."),
+});
+
+function validateLoginInput(data) {
+  const result = loginSchema.safeParse(data);
+  if (!result.success) {
+    return result.error.issues.map((err) => err.message);
+  }
+  return [];
 }
 
-module.exports = { validateRegisterInput, validateLoginInput, VALID_ROLES };
+export { validateRegisterInput, validateLoginInput, VALID_ROLES };
